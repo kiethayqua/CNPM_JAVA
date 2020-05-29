@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import com.jfoenix.controls.JFXButton?>
+<?import com.jfoenix.controls.JFXListView?>
+<?import com.jfoenix.controls.JFXTabPane?>
+<?import com.jfoenix.controls.JFXTextField?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.Tab?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.StackPane?>
+
+<StackPane fx:id="rootPane" xmlns="http://javafx.com/javafx/8.0.171" xmlns:fx="http://javafx.com/fxml/1" fx:controller="javafxapplication1.NhanVienLoginController">
+   <children>
+      <AnchorPane id="AnchorPane" prefHeight="600.0" prefWidth="800.0">
+         <children>
+            <JFXTabPane layoutX="-2.0" prefHeight="600.0" prefWidth="806.0">
+               <tabs>
+                  <Tab text="Bán Trà Sữa">
+                     <content>
+                        <AnchorPane prefHeight="200.0" prefWidth="1016.0">
+                           <children>
+                              <JFXListView fx:id="menuTS" layoutY="49.0" prefHeight="515.0" prefWidth="530.0" />
+                              <JFXTextField fx:id="tfTimKiem" layoutX="14.0" layoutY="14.0" onMousePressed="#filterComponentTraSua" prefHeight="25.0" prefWidth="200.0" promptText="Tìm kiếm" />
+                              <TableView fx:id="tableThanhToan" layoutX="531.0" onMousePressed="#selectedItem" prefHeight="356.0" prefWidth="279.0" />
+                              <JFXButton fx:id="thanhToanBtn" layoutX="716.0" layoutY="515.0" onAction="#thanhToan" ripplerFill="WHITE" style="-fx-background-color: #009B77;" text="Thanh Toán" />
+                              <JFXTextField fx:id="tfMaThanhVien" layoutX="544.0" layoutY="371.0" onKeyReleased="#inputMaThanhVien" promptText="Nhập mã thành viên" />
+                              <JFXButton fx:id="taoThanhVienBtn" layoutX="544.0" layoutY="515.0" onAction="#taoThanhVien" ripplerFill="WHITE" style="-fx-background-color: #92A8D1;" text="Tạo Thành Viên" />
+                              <JFXButton layoutX="743.0" layoutY="371.0" onAction="#xoaThanhToan" ripplerFill="WHITE" style="-fx-background-color: #FF6F61;" text="Xóa" fx:id="xoaBtn" />
+                              <Label layoutX="544.0" layoutY="417.0" text="Tổng hóa đơn: " />
+                              <Label layoutX="544.0" layoutY="445.0" text="Giảm giá:" />
+                              <Label layoutX="544.0" layoutY="474.0" text="Thành tiền:" />
+                              <Label fx:id="tongHoaDon" layoutX="631.0" layoutY="417.0" text="0" />
+                              <Label fx:id="giamGia" layoutX="603.0" layoutY="445.0" text="0" />
+                              <Label fx:id="thanhTien" layoutX="611.0" layoutY="474.0" text="0" />
+                              <JFXButton fx:id="dangXuatBtn" layoutX="446.0" layoutY="14.0" onAction="#dangXuat" ripplerFill="WHITE" style="-fx-background-color: #DD4124;" text="Đăng xuất" textFill="WHITE" />
+                           </children>
+                        </AnchorPane>
+                     </content>
+                  </Tab>
+               </tabs>
+            </JFXTabPane>
+         </children>
+      </AnchorPane>
+   </children>
+</StackPane>

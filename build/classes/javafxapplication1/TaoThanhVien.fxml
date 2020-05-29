@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import com.jfoenix.controls.JFXButton?>
+<?import com.jfoenix.controls.JFXTextField?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.text.Font?>
+
+
+<AnchorPane id="AnchorPane" prefHeight="191.0" prefWidth="266.0" xmlns:fx="http://javafx.com/fxml/1" xmlns="http://javafx.com/javafx/8.0.171" fx:controller="javafxapplication1.TaoThanhVienController">
+   <children>
+      <JFXTextField fx:id="tfHoTen" layoutX="26.0" layoutY="71.0" promptText="Họ Tên" />
+      <Label layoutX="48.0" layoutY="16.0" text="TẠO THÀNH VIÊN">
+         <font>
+            <Font name="System Bold" size="20.0" />
+         </font>
+      </Label>
+      <JFXTextField fx:id="tfSDT" layoutX="26.0" layoutY="118.0" promptText="Số Điện Thoại" />
+      <JFXButton fx:id="btnTao" layoutX="182.0" layoutY="71.0" onAction="#taoThanhVien" prefHeight="77.0" prefWidth="69.0" ripplerFill="WHITE" style="-fx-background-color: #009B77;" text="Tạo " />
+   </children>
+</AnchorPane>
