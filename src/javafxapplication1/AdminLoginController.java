@@ -49,6 +49,7 @@ import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.Button;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.ChoiceBox;
+import javafx.scene.control.Label;
 import javafx.scene.control.SelectionMode;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TablePosition;
@@ -169,6 +170,11 @@ public class AdminLoginController implements Initializable {
     private JFXButton xoaTSBtn;
     @FXML
     private JFXButton suaTSBtn;
+    
+    @FXML
+    private Label lblDoanhThu;
+    @FXML
+    private JFXDatePicker datepickerHD;
 
     void loadNhanVien(int quyen) {
         final ObservableList<Person> data = FXCollections.observableArrayList();
@@ -178,6 +184,10 @@ public class AdminLoginController implements Initializable {
             themNhanVienBtn.setDisable(true);
             suaNhanVienBtn.setDisable(true);
             xoaNhanVienBtn.setDisable(true);
+        }else{
+            themNhanVienBtn.setDisable(false);
+            suaNhanVienBtn.setDisable(false);
+            xoaNhanVienBtn.setDisable(false);
         }
         try {
             ps = connect.prepareStatement(sql);
@@ -276,27 +286,27 @@ public class AdminLoginController implements Initializable {
 
         tableTraSua.getColumns().addAll(clTS1, clTS2, clTS3, clTS4);
 
-        // Hoa Don
+// Hoa Don
         tableHoaDon.setEditable(true);
         TableColumn clHD1 = new TableColumn("STT");
         clHD1.setCellValueFactory(new PropertyValueFactory<HoaDon, String>("stt"));
-        // clHD1.setPrefWidth(54);
+        clHD1.setPrefWidth(40);
 
-        TableColumn clHD4 = new TableColumn("T?ng Giá");
+        TableColumn clHD4 = new TableColumn("Tổng Giá");
         clHD4.setCellValueFactory(new PropertyValueFactory<HoaDon, String>("tongGia"));
-        //clHD4.setPrefWidth(135);
+        clHD4.setPrefWidth(90);
 
         TableColumn clHD5 = new TableColumn("Tên Nhân Viên");
         clHD5.setCellValueFactory(new PropertyValueFactory<HoaDon, String>("tenNV"));
-        //clHD5.setPrefWidth(158);      
+        clHD5.setPrefWidth(122);      
 
-        TableColumn clHD6 = new TableColumn("Ngày T?o");
+        TableColumn clHD6 = new TableColumn("Ngày Tạo");
         clHD6.setCellValueFactory(new PropertyValueFactory<HoaDon, String>("ngayTao"));
-        //clHD6.setPrefWidth(93);
+        clHD6.setPrefWidth(85);
 
         TableColumn clHD2 = new TableColumn("Mã Thành Viên");
         clHD2.setCellValueFactory(new PropertyValueFactory<HoaDon, String>("sdt"));
-        //clHD6.setPrefWidth(93);
+        clHD2.setPrefWidth(123);
 
         tableHoaDon.getColumns().addAll(clHD1, clHD5, clHD6, clHD4, clHD2);
         loadHoaDon();
@@ -305,19 +315,19 @@ public class AdminLoginController implements Initializable {
         tableChiTietHD.setEditable(true);
         TableColumn cl1 = new TableColumn("STT");
         cl1.setCellValueFactory(new PropertyValueFactory<HoaDon, String>("stt"));
-        // clHD1.setPrefWidth(54);
+        cl1.setPrefWidth(50);
 
-        TableColumn cl2 = new TableColumn("Tên Trà S?a");
+        TableColumn cl2 = new TableColumn("Tên Trà Sữa");
         cl2.setCellValueFactory(new PropertyValueFactory<HoaDon, String>("tenTS"));
-        //clHD4.setPrefWidth(135);
+        cl2.setPrefWidth(126);
 
-        TableColumn cl3 = new TableColumn("S? Lu?ng");
+        TableColumn cl3 = new TableColumn("Số Lượng");
         cl3.setCellValueFactory(new PropertyValueFactory<HoaDon, String>("soLuong"));
-        //clHD5.setPrefWidth(158);      
+        cl3.setPrefWidth(80);      
 
         TableColumn cl4 = new TableColumn("Giá");
         cl4.setCellValueFactory(new PropertyValueFactory<HoaDon, String>("gia"));
-        //clHD6.setPrefWidth(93);
+        cl4.setPrefWidth(85);
 
         tableChiTietHD.getColumns().addAll(cl1, cl2, cl3, cl4);
         loadTraSua(1);
@@ -904,6 +914,11 @@ public class AdminLoginController implements Initializable {
             themTSBtn.setDisable(true);
             suaTSBtn.setDisable(true);
             xoaTSBtn.setDisable(true);
+        }else{
+            chonAnh.setDisable(false);
+            themTSBtn.setDisable(false);
+            suaTSBtn.setDisable(false);
+            xoaTSBtn.setDisable(false);
         }
         try {
             ps = connect.prepareStatement(sql);
@@ -1426,14 +1441,6 @@ public class AdminLoginController implements Initializable {
             } catch (SQLException e) {
                 System.err.println(e);
             }
-//            try {
-//                ps = connect.prepareStatement(sql);
-//                ps.setInt(1, Integer.valueOf(maHD));
-//                ps.execute();
-//                success = true;
-//            } catch (SQLException e) {
-//                System.err.println(e);
-//            }
         }
         if (success) {
             JFXDialogLayout dialogLayout = new JFXDialogLayout();
@@ -1847,6 +1854,25 @@ public class AdminLoginController implements Initializable {
         primaryStage.setTitle("Thông tin Hóa Đơn");
         primaryStage.setScene(scene);
         primaryStage.show();
+    }
+    
+    @FXML
+    private void thongkeHD(ActionEvent event) {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+        String date = datepickerHD.getValue().format(formatter);
+        String sql = "SELECT SUM(tonggia) AS tongtien FROM hoadon WHERE ngaytao=?";
+        int sum = 0;
+        try{
+            ps = connect.prepareStatement(sql);
+            ps.setString(1, date);
+            rs = ps.executeQuery();
+            if(rs.next()){
+                sum = rs.getInt("tongtien");
+            }
+            lblDoanhThu.setText("Tổng Doanh Thu Ngày " + date + " là: " + sum + " VNĐ");
+        }catch(Exception e){
+            System.err.println(e);
+        }
     }
 
 }
