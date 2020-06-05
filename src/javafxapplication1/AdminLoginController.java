@@ -31,7 +31,10 @@ import java.util.ResourceBundle;
 import java.util.function.Predicate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
+import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
 import javafx.collections.transformation.SortedList;
@@ -43,10 +46,13 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
+import javafx.scene.control.Button;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.SelectionMode;
 import javafx.scene.control.TableColumn;
+import javafx.scene.control.TablePosition;
+import javafx.scene.control.TableRow;
 import javafx.scene.control.TableSelectionModel;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TableView.TableViewSelectionModel;
@@ -67,6 +73,7 @@ import static javafxapplication1.LoginController.loginAccount;
  */
 public class AdminLoginController implements Initializable {
 
+    public static String maTV;
     Connection connect = KetNoiDB.ketNoi();
     PreparedStatement ps;
     ResultSet rs;
@@ -111,8 +118,6 @@ public class AdminLoginController implements Initializable {
     @FXML
     private JFXTextField tfTenTS;
     @FXML
-    private JFXTextArea moTa;
-    @FXML
     private JFXTextField tfGia;
     @FXML
     private ImageView imgView;
@@ -123,11 +128,62 @@ public class AdminLoginController implements Initializable {
     @FXML
     private JFXTextField filterFieldTS;
 
-    void loadNhanVien() {
+    // Quan Li Hoa Don
+    @FXML
+    private TableView<HoaDon> tableHoaDon;
+    @FXML
+    private JFXTextField filterFieldHD;
+    @FXML
+    private TableView<ChiTietHD> tableChiTietHD;
+
+    // Quan Li Thanh Vien
+    @FXML
+    private TableView<ThanhVien> tableThanhVien;
+    @FXML
+    private JFXTextField tfTTV;
+    @FXML
+    private JFXTextField tfSDT;
+    @FXML
+    private JFXTextField tfDiem;
+    @FXML
+    private JFXTextField tfTim;
+    @FXML
+    private JFXDatePicker tfngayTao;
+    @FXML
+    private Button btSuaTV;
+    @FXML
+    private Button btXoaTV;
+    @FXML
+    private Button btThem;
+    @FXML
+    private ChoiceBox<String> choiceBoxStatus;
+    @FXML
+    private Button btXHD;
+    @FXML
+    private ChoiceBox<String> choiceBoxTrangThai;
+    @FXML
+    private JFXButton chonAnh;
+    @FXML
+    private JFXButton themTSBtn;
+    @FXML
+    private JFXButton xoaTSBtn;
+    @FXML
+    private JFXButton suaTSBtn;
+
+    void loadNhanVien(int quyen) {
         final ObservableList<Person> data = FXCollections.observableArrayList();
-        String sql = "SELECT hoten, cmnd, ngaysinh, quequan, taikhoan, quyen FROM nhanvien";
+        String sql = "SELECT hoten, cmnd, ngaysinh, quequan, taikhoan, quyen FROM nhanvien WHERE quyen = 0 OR quyen = 1";
+        if (quyen == -1) {
+            sql = "SELECT hoten, cmnd, ngaysinh, quequan, taikhoan, quyen FROM nhanvien WHERE quyen=?";
+            themNhanVienBtn.setDisable(true);
+            suaNhanVienBtn.setDisable(true);
+            xoaNhanVienBtn.setDisable(true);
+        }
         try {
             ps = connect.prepareStatement(sql);
+            if (quyen == -1) {
+                ps.setInt(1, quyen);
+            }
             rs = ps.executeQuery();
             int stt = 0;
             while (rs.next()) {
@@ -137,10 +193,11 @@ public class AdminLoginController implements Initializable {
                 String cmnd = rs.getString("cmnd");
                 String ngaySinh = rs.getString("ngaysinh");
                 String queQuan = rs.getString("quequan");
-                int quyen = rs.getInt("quyen");
-                data.add(new Person(userName, String.valueOf(stt), hoTen, cmnd, ngaySinh, queQuan, String.valueOf(quyen)));
+                int q = rs.getInt("quyen");
+                data.add(new Person(userName, String.valueOf(stt), hoTen, cmnd, ngaySinh, queQuan, String.valueOf(q)));
             }
             tableNhanVien.setItems(data);
+
         } catch (SQLException e) {
             System.err.println(e);
         }
@@ -155,7 +212,19 @@ public class AdminLoginController implements Initializable {
                 new FileChooser.ExtensionFilter("Images", "*.png", "*.jpg", "*.gif"),
                 new FileChooser.ExtensionFilter("Text Files", "*.txt")
         );
+
+        // choicebox trạng thái làm việc
+        final ObservableList<String> cbStatus = FXCollections.observableArrayList("Đang Làm Việc", "Đã Nghỉ Việc");
+        ((ChoiceBox) choiceBoxStatus).setItems(cbStatus);
+        choiceBoxStatus.getSelectionModel().selectFirst();
+
+        // choicebox trạng thái của trà sữa
+        final ObservableList<String> cbTrangThai = FXCollections.observableArrayList("Còn Bán", "Ngưng Bán");
+        ((ChoiceBox) choiceBoxTrangThai).setItems(cbTrangThai);
+        choiceBoxTrangThai.getSelectionModel().selectFirst();
+
         // table NhanVien
+        // choicebox Chức vụ
         tableNhanVien.setEditable(true);
         final ObservableList<String> IMPORTVARIABLES = FXCollections.observableArrayList("Nhân Viên", "Quản Lí");
         ((ChoiceBox) choiceBoxChucVu).setItems(IMPORTVARIABLES);
@@ -184,8 +253,9 @@ public class AdminLoginController implements Initializable {
         column5.setPrefWidth(124);
 
         tableNhanVien.getColumns().addAll(column1, column2, column3, column4, column5);
-        loadNhanVien();
-        
+        loadNhanVien(0);
+        loadNhanVien(1);
+
         // Tra Sua
         tableTraSua.setEditable(true);
         TableColumn clTS1 = new TableColumn("STT");
@@ -205,7 +275,100 @@ public class AdminLoginController implements Initializable {
         clTS4.setPrefWidth(133);
 
         tableTraSua.getColumns().addAll(clTS1, clTS2, clTS3, clTS4);
-        loadTraSua();
+
+        // Hoa Don
+        tableHoaDon.setEditable(true);
+        TableColumn clHD1 = new TableColumn("STT");
+        clHD1.setCellValueFactory(new PropertyValueFactory<HoaDon, String>("stt"));
+        // clHD1.setPrefWidth(54);
+
+        TableColumn clHD4 = new TableColumn("T?ng Giá");
+        clHD4.setCellValueFactory(new PropertyValueFactory<HoaDon, String>("tongGia"));
+        //clHD4.setPrefWidth(135);
+
+        TableColumn clHD5 = new TableColumn("Tên Nhân Viên");
+        clHD5.setCellValueFactory(new PropertyValueFactory<HoaDon, String>("tenNV"));
+        //clHD5.setPrefWidth(158);      
+
+        TableColumn clHD6 = new TableColumn("Ngày T?o");
+        clHD6.setCellValueFactory(new PropertyValueFactory<HoaDon, String>("ngayTao"));
+        //clHD6.setPrefWidth(93);
+
+        TableColumn clHD2 = new TableColumn("Mã Thành Viên");
+        clHD2.setCellValueFactory(new PropertyValueFactory<HoaDon, String>("sdt"));
+        //clHD6.setPrefWidth(93);
+
+        tableHoaDon.getColumns().addAll(clHD1, clHD5, clHD6, clHD4, clHD2);
+        loadHoaDon();
+
+        // Chi Tiet HD
+        tableChiTietHD.setEditable(true);
+        TableColumn cl1 = new TableColumn("STT");
+        cl1.setCellValueFactory(new PropertyValueFactory<HoaDon, String>("stt"));
+        // clHD1.setPrefWidth(54);
+
+        TableColumn cl2 = new TableColumn("Tên Trà S?a");
+        cl2.setCellValueFactory(new PropertyValueFactory<HoaDon, String>("tenTS"));
+        //clHD4.setPrefWidth(135);
+
+        TableColumn cl3 = new TableColumn("S? Lu?ng");
+        cl3.setCellValueFactory(new PropertyValueFactory<HoaDon, String>("soLuong"));
+        //clHD5.setPrefWidth(158);      
+
+        TableColumn cl4 = new TableColumn("Giá");
+        cl4.setCellValueFactory(new PropertyValueFactory<HoaDon, String>("gia"));
+        //clHD6.setPrefWidth(93);
+
+        tableChiTietHD.getColumns().addAll(cl1, cl2, cl3, cl4);
+        loadTraSua(1);
+
+        // Thanh Vien
+        //tableThanhVien
+        tfngayTao.setValue(LocalDate.parse("01/01/2020", formatter));
+        tableThanhVien.setEditable(true);
+        TableColumn clTV1 = new TableColumn("STT");
+        clTV1.setCellValueFactory(new PropertyValueFactory<ThanhVien, String>("stt"));
+        clTV1.setPrefWidth(100);
+
+        TableColumn clTV2 = new TableColumn("Tên Thành Viên");
+        clTV2.setCellValueFactory(new PropertyValueFactory<ThanhVien, String>("tenTV"));
+        clTV2.setPrefWidth(180);
+
+        TableColumn clTV3 = new TableColumn("Số Điện Thoại");
+        clTV3.setCellValueFactory(new PropertyValueFactory<ThanhVien, String>("SDT"));
+        clTV3.setPrefWidth(155);
+
+        TableColumn clTV4 = new TableColumn("Ngày Tạo");
+        clTV4.setCellValueFactory(new PropertyValueFactory<ThanhVien, String>("ngayTao"));
+        clTV4.setPrefWidth(133);
+
+        tableThanhVien.getColumns().addAll(clTV1, clTV2, clTV3, clTV4);
+        loadThanhVien();
+
+        choiceBoxStatus.getSelectionModel().selectedItemProperty().addListener(new ChangeListener<String>() {
+            @Override
+            public void changed(ObservableValue<? extends String> observable, String oldValue, String newValue) {
+                if (choiceBoxStatus.getSelectionModel().getSelectedIndex() == 0) {
+                    loadNhanVien(0);
+                    loadNhanVien(1);
+                } else if (choiceBoxStatus.getSelectionModel().getSelectedIndex() == 1) {
+                    loadNhanVien(-1);
+                }
+            }
+
+        });
+
+        choiceBoxTrangThai.getSelectionModel().selectedItemProperty().addListener(new ChangeListener<String>() {
+            @Override
+            public void changed(ObservableValue<? extends String> observable, String oldValue, String newValue) {
+                if (choiceBoxTrangThai.getSelectionModel().getSelectedIndex() == 0) {
+                    loadTraSua(1);
+                } else if (choiceBoxTrangThai.getSelectionModel().getSelectedIndex() == 1) {
+                    loadTraSua(-1);
+                }
+            }
+
+        });
 
     }
 
@@ -227,11 +390,13 @@ public class AdminLoginController implements Initializable {
 
         TableViewSelectionModel<Person> selectionModel = tableNhanVien.getSelectionModel();
 
-        selectionModel.setSelectionMode(SelectionMode.MULTIPLE);
+        selectionModel.setSelectionMode(SelectionMode.SINGLE);
 
         ObservableList<Person> selectedItems = selectionModel.getSelectedItems();
 
         String userName = selectedItems.get(0).getUserName();
+        
+        
 
         String sql = "SELECT * FROM taikhoan WHERE taikhoan=?";
         try {
@@ -248,6 +413,8 @@ public class AdminLoginController implements Initializable {
         } catch (SQLException e) {
             System.err.println(e);
         }
+        
+        
 
         tfHoTen.setText(selectedItems.get(0).getName());
         tfCMND.setText(selectedItems.get(0).getCmnd());
@@ -257,9 +424,17 @@ public class AdminLoginController implements Initializable {
         String checkAdmin = selectedItems.get(0).getQuyen();
         if (checkAdmin.equals("1")) {
             choiceBoxChucVu.getSelectionModel().select(1);
-        } else {
+            if(tfUsername.getText().equals(loginAccount)){
+               choiceBoxChucVu.setDisable(true);
+            }else{
+               choiceBoxChucVu.setDisable(false);
+            }
+        } else if(checkAdmin.equals("0")){
             choiceBoxChucVu.getSelectionModel().select(0);
+            choiceBoxChucVu.setDisable(false);
         }
+        
+        
     }
 
     boolean checkInputInfo(String userName, String cmnd) {
@@ -369,6 +544,21 @@ public class AdminLoginController implements Initializable {
             dialog.show();
             return false;
         }
+
+        if (!tfCMND.getText().matches("([0-9]+(\\\\.[0-9+])?)+") || tfCMND.getText().length() != 9) {
+            JFXDialogLayout dialogLayout = new JFXDialogLayout();
+            JFXButton button = new JFXButton("OK");
+            button.setStyle("-fx-background-color: #337ab7;");
+            JFXDialog dialog = new JFXDialog(rootPane, dialogLayout, JFXDialog.DialogTransition.TOP);
+            button.addEventHandler(MouseEvent.MOUSE_CLICKED, (MouseEvent mountEvent) -> {
+                dialog.close();
+            });
+            dialogLayout.setBody(new Text("CMND là số và phải có 9 kí tự"));
+            dialogLayout.setActions(button);
+            dialog.show();
+            return false;
+        }
+
         sql = "SELECT cmnd FROM nhanvien WHERE cmnd=?";
         try {
             ps = connect.prepareStatement(sql);
@@ -459,15 +649,17 @@ public class AdminLoginController implements Initializable {
             dialogLayout.setActions(button);
             dialog.show();
         }
-        loadNhanVien();
+        loadNhanVien(0);
+        loadNhanVien(1);
 
     }
 
     @FXML
     private void xoaNhanVien(ActionEvent event) {
         boolean success = false;
-        String sql = "DELETE FROM nhanvien WHERE taikhoan=?";
-        String sql1 = "DELETE FROM taikhoan WHERE taikhoan=?";
+        String sql = "UPDATE nhanvien SET quyen = -1 WHERE taikhoan = ?";
+//        String sql = "DELETE FROM nhanvien WHERE taikhoan=?";
+//        String sql1 = "DELETE FROM taikhoan WHERE taikhoan=?";
         Alert alert = new Alert(AlertType.CONFIRMATION);
         alert.setTitle("Xác Nhận");
         alert.setHeaderText(null);
@@ -498,14 +690,6 @@ public class AdminLoginController implements Initializable {
             } catch (SQLException e) {
                 System.err.println(e);
             }
-            try {
-                ps = connect.prepareStatement(sql1);
-                ps.setString(1, tfUsername.getText());
-                ps.execute();
-                success = true;
-            } catch (SQLException e) {
-                System.err.println(e);
-            }
         }
         if (success) {
             JFXDialogLayout dialogLayout = new JFXDialogLayout();
@@ -516,12 +700,13 @@ public class AdminLoginController implements Initializable {
                 dialog.close();
             });
 
-            dialogLayout.setBody(new Text("Xóa Viên Thành Công"));
+            dialogLayout.setBody(new Text("Xóa Nhân Viên Thành Công"));
             dialogLayout.setActions(button);
             dialog.show();
         }
         //tableNhanVien.getItems().clear();
-        loadNhanVien();
+        loadNhanVien(0);
+        loadNhanVien(1);
     }
 
     @FXML
@@ -539,6 +724,8 @@ public class AdminLoginController implements Initializable {
         } catch (Exception e) {
             System.err.println(e);
         }
+        
+        
         String sql = "UPDATE taikhoan SET matkhau=? WHERE taikhoan=?";
         String sql1 = "UPDATE nhanvien SET hoten=?, ngaysinh=?, quequan=?, quyen=? WHERE taikhoan=?";
         String sql2 = "UPDATE nhanvien SET hoten=?, cmnd=?, ngaysinh=?, quequan=?, quyen=? WHERE taikhoan=?";
@@ -643,7 +830,8 @@ public class AdminLoginController implements Initializable {
                     dialog.show();
                 }
                 //tableNhanVien.getItems().clear();
-                loadNhanVien();
+                loadNhanVien(0);
+                loadNhanVien(1);
             }
 
         }
@@ -708,21 +896,28 @@ public class AdminLoginController implements Initializable {
     /* 
                                     Tra Sua
      */
-    void loadTraSua() {
+    void loadTraSua(int trangThai) {
         final ObservableList<TraSua> data = FXCollections.observableArrayList();
-        String sql = "SELECT * FROM trasua";
+        String sql = "SELECT * FROM trasua WHERE trangthai= ?";
+        if(trangThai == -1){
+            chonAnh.setDisable(true);
+            themTSBtn.setDisable(true);
+            suaTSBtn.setDisable(true);
+            xoaTSBtn.setDisable(true);
+        }
         try {
             ps = connect.prepareStatement(sql);
+            ps.setInt(1, trangThai);
             rs = ps.executeQuery();
             int stt = 0;
             while (rs.next()) {
                 stt++;
                 String tenTraSua = rs.getString("tents");
-                String moTa = rs.getString("mota");
+                String tt = rs.getInt("trangthai") == 1 ? "Đang bán" : "Ngưng bán";
                 int gia = rs.getInt("gia");
                 String maTS = String.valueOf(rs.getInt("mats"));
 
-                data.add(new TraSua(tenTraSua, moTa, String.valueOf(gia), String.valueOf(stt), maTS));
+                data.add(new TraSua(tenTraSua, tt, String.valueOf(gia), String.valueOf(stt), maTS));
             }
             tableTraSua.setItems(data);
         } catch (SQLException e) {
@@ -737,7 +932,6 @@ public class AdminLoginController implements Initializable {
         ObservableList<TraSua> selectedItems = selectionModel.getSelectedItems();
         try {
             tfTenTS.setText(selectedItems.get(0).getTenTraSua());
-            moTa.setText(selectedItems.get(0).getMoTa());
             tfGia.setText(selectedItems.get(0).getGia());
 
             String maTS = selectedItems.get(0).getMaTS();
@@ -798,14 +992,14 @@ public class AdminLoginController implements Initializable {
 
     @FXML
     private void themTraSua(ActionEvent event) {
-        String sql = "INSERT INTO trasua(tents, mota, gia, hinhanh) VALUES (?, ?, ?, ?)";
+        String sql = "INSERT INTO trasua(tents, trangthai, gia, hinhanh) VALUES (?, ?, ?, ?)";
         boolean success = false;
 
         if (checkInputInfoTS() && checkTenTraSua("")) {
             try {
                 ps = connect.prepareStatement(sql);
                 ps.setString(1, tfTenTS.getText());
-                ps.setString(2, moTa.getText());
+                ps.setInt(2, 1);
                 ps.setInt(3, Integer.valueOf(tfGia.getText()));
                 fis = new FileInputStream(file);
                 ps.setBinaryStream(4, fis, file.length());
@@ -840,7 +1034,7 @@ public class AdminLoginController implements Initializable {
                 dialog.show();
                 clearInfoTS(event);
             }
-            loadTraSua();
+            loadTraSua(1);
         }
     }
 
@@ -852,7 +1046,8 @@ public class AdminLoginController implements Initializable {
         ObservableList<TraSua> selectedItems = selectionModel.getSelectedItems();
         String maTS = selectedItems.get(0).getMaTS();
 
-        String sql = "DELETE FROM trasua WHERE mats=?";
+        String sql = "UPDATE trasua SET trangthai=-1 WHERE mats=?";
+        //String sql = "DELETE FROM trasua WHERE mats=?";
         Alert alert = new Alert(AlertType.CONFIRMATION);
         alert.setTitle("Xác Nhận");
         alert.setHeaderText(null);
@@ -882,7 +1077,7 @@ public class AdminLoginController implements Initializable {
             dialog.show();
             clearInfoTS(event);
         }
-        loadTraSua();
+        loadTraSua(1);
     }
 
     @FXML
@@ -892,7 +1087,7 @@ public class AdminLoginController implements Initializable {
         selectionModel.setSelectionMode(SelectionMode.SINGLE);
         ObservableList<TraSua> selectedItems = selectionModel.getSelectedItems();
         String maTS = selectedItems.get(0).getMaTS();
-        String sql = "UPDATE trasua SET tents=?, mota=?, gia=?, hinhanh=? WHERE mats=?";
+        String sql = "UPDATE trasua SET tents=?, gia=?, hinhanh=? WHERE mats=?";
 
         String tenTS = "";
         String loadTenTS = "SELECT tents from trasua where mats=?";
@@ -907,7 +1102,7 @@ public class AdminLoginController implements Initializable {
             System.err.println(e);
         }
 
-        String sql1 = "UPDATE trasua SET mota=?, gia=?, hinhanh=? WHERE mats=?";
+        String sql1 = "UPDATE trasua SET gia=?, hinhanh=? WHERE mats=?";
 
         if (checkInputInfoTS() && checkTenTraSua("")) {
             Alert alert = new Alert(AlertType.CONFIRMATION);
@@ -921,11 +1116,10 @@ public class AdminLoginController implements Initializable {
                         try {
                             ps = connect.prepareStatement(sql1);
                             //ps.setString(1, tfTenTS.getText());
-                            ps.setString(1, moTa.getText());
-                            ps.setInt(2, Integer.valueOf(tfGia.getText()));
+                            ps.setInt(1, Integer.valueOf(tfGia.getText()));
                             fis = new FileInputStream(file);
-                            ps.setBinaryStream(3, (InputStream) fis, (int) file.length());
-                            ps.setInt(4, Integer.valueOf(maTS));
+                            ps.setBinaryStream(2, (InputStream) fis, (int) file.length());
+                            ps.setInt(3, Integer.valueOf(maTS));
 
                             ps.executeUpdate();
                             success = true;
@@ -934,12 +1128,11 @@ public class AdminLoginController implements Initializable {
                         }
                     } else {
                         try {
-                            String sql2 = "UPDATE trasua SET tents=?, mota=?, gia=? WHERE mats=?";
+                            String sql2 = "UPDATE trasua SET tents=?, gia=? WHERE mats=?";
                             ps = connect.prepareStatement(sql2);
                             ps.setString(1, tfTenTS.getText());
-                            ps.setString(2, moTa.getText());
-                            ps.setInt(3, Integer.valueOf(tfGia.getText()));
-                            ps.setInt(4, Integer.valueOf(maTS));
+                            ps.setInt(2, Integer.valueOf(tfGia.getText()));
+                            ps.setInt(3, Integer.valueOf(maTS));
                             ps.executeUpdate();
                             success = true;
                         } catch (SQLException e) {
@@ -970,11 +1163,10 @@ public class AdminLoginController implements Initializable {
                                 try {
                                     ps = connect.prepareStatement(sql1);
                                     //ps.setString(1, tfTenTS.getText());
-                                    ps.setString(1, moTa.getText());
-                                    ps.setInt(2, Integer.valueOf(tfGia.getText()));
+                                    ps.setInt(1, Integer.valueOf(tfGia.getText()));
                                     fis = new FileInputStream(file);
-                                    ps.setBinaryStream(3, (InputStream) fis, (int) file.length());
-                                    ps.setInt(4, Integer.valueOf(maTS));
+                                    ps.setBinaryStream(2, (InputStream) fis, (int) file.length());
+                                    ps.setInt(3, Integer.valueOf(maTS));
 
                                     ps.executeUpdate();
                                     success = true;
@@ -986,9 +1178,8 @@ public class AdminLoginController implements Initializable {
                                     String sql2 = "UPDATE trasua SET tents=?, mota=?, gia=? WHERE mats=?";
                                     ps = connect.prepareStatement(sql2);
                                     ps.setString(1, tfTenTS.getText());
-                                    ps.setString(2, moTa.getText());
-                                    ps.setInt(3, Integer.valueOf(tfGia.getText()));
-                                    ps.setInt(4, Integer.valueOf(maTS));
+                                    ps.setInt(2, Integer.valueOf(tfGia.getText()));
+                                    ps.setInt(3, Integer.valueOf(maTS));
                                     ps.executeUpdate();
                                     success = true;
                                 } catch (SQLException e) {
@@ -1014,16 +1205,16 @@ public class AdminLoginController implements Initializable {
                     dialog.show();
                     clearInfoTS(event);
                 }
-                loadTraSua();
+                loadTraSua(1);
 
             }
         }
+
     }
 
     @FXML
     private void clearInfoTS(ActionEvent event) {
         tfTenTS.setText("");
-        moTa.setText("");
         tfGia.setText("");
         imgView.setImage(null);
     }
@@ -1078,19 +1269,6 @@ public class AdminLoginController implements Initializable {
             return false;
         }
 
-        if (moTa.getText().equals("")) {
-            JFXDialogLayout dialogLayout = new JFXDialogLayout();
-            JFXButton button = new JFXButton("OK");
-            button.setStyle("-fx-background-color: #337ab7;");
-            JFXDialog dialog = new JFXDialog(rootPane, dialogLayout, JFXDialog.DialogTransition.TOP);
-            button.addEventHandler(MouseEvent.MOUSE_CLICKED, (MouseEvent mountEvent) -> {
-                dialog.close();
-            });
-            dialogLayout.setBody(new Text("Chưa điền mô tả"));
-            dialogLayout.setActions(button);
-            dialog.show();
-            return false;
-        }
         if (tfGia.getText().equals("") || !tfGia.getText().matches("([0-9]+(\\\\.[0-9+])?)+")) {
             JFXDialogLayout dialogLayout = new JFXDialogLayout();
             JFXButton button = new JFXButton("OK");
@@ -1136,6 +1314,539 @@ public class AdminLoginController implements Initializable {
             System.err.println(e);
         }
         return true;
+    }
+
+    // Hoa Don
+    void loadHoaDon() {
+        final ObservableList<HoaDon> data = FXCollections.observableArrayList();
+
+        String sql = "SELECT hd.mahd, hd.matv, hd.tonggia, hd.ngaytao, nv.hoten FROM hoadon hd JOIN nhanvien nv ON hd.manv = nv.manv";
+        try {
+            ps = connect.prepareStatement(sql);
+            rs = ps.executeQuery();
+            int stt = 0;
+            while (rs.next()) {
+                stt++;
+                int tongGia = rs.getInt("tonggia");
+                String tenNV = rs.getString("hoten");
+                String ngayTao = rs.getString("ngaytao");
+                String sdt = " ";
+                int mahd = rs.getInt("mahd");
+                if (String.valueOf(rs.getInt("matv")) != null) {
+                    String sql1 = "SELECT sdt from thanhvien where matv=?";
+                    try {
+                        PreparedStatement ps1;
+                        ResultSet rs1;
+                        ps1 = connect.prepareStatement(sql1);
+                        ps1.setInt(1, rs.getInt("matv"));
+                        rs1 = ps1.executeQuery();
+                        if (rs1.next()) {
+                            sdt = rs1.getString("sdt");
+                        }
+                    } catch (SQLException e) {
+                        System.err.println(e);
+                    }
+                }
+                data.add(new HoaDon(String.valueOf(tongGia), tenNV, ngayTao, sdt, String.valueOf(stt), String.valueOf(mahd)));
+            }
+            tableHoaDon.setItems(data);
+        } catch (SQLException e) {
+            System.err.println(e);
+        }
+    }
+
+    void loadChiTietHD(int mahd) {
+        final ObservableList<ChiTietHD> data = FXCollections.observableArrayList();
+        String sql = "SELECT ct.soluong, ts.gia, ts.tents FROM chitiethd ct JOIN trasua ts ON ts.mats = ct.mats where mahd=?";
+        try {
+            ps = connect.prepareStatement(sql);
+            ps.setInt(1, mahd);
+            rs = ps.executeQuery();
+            int stt = 0;
+            while (rs.next()) {
+                stt++;
+                String tenTS = rs.getString("tents");
+                int gia = rs.getInt("gia");
+                int soLuong = rs.getInt("soluong");
+                data.add(new ChiTietHD(String.valueOf(stt), tenTS, String.valueOf(soLuong), String.valueOf(gia)));
+
+            }
+            tableChiTietHD.setItems(data);
+
+        } catch (SQLException e) {
+            System.err.println(e);
+        }
+
+    }
+
+    @FXML
+    private void selectedItemsHD(MouseEvent event) {
+        TableViewSelectionModel<HoaDon> selectionModel = tableHoaDon.getSelectionModel();
+        selectionModel.setSelectionMode(SelectionMode.SINGLE);
+        ObservableList<HoaDon> selectedItems = selectionModel.getSelectedItems();
+
+        try {
+            loadChiTietHD(Integer.valueOf(selectedItems.get(0).getMahd()));
+        } catch (NumberFormatException e) {
+            JFXDialogLayout dialogLayout = new JFXDialogLayout();
+            JFXButton button = new JFXButton("OK");
+            button.setStyle("-fx-background-color: #337ab7;");
+            JFXDialog dialog = new JFXDialog(rootPane, dialogLayout, JFXDialog.DialogTransition.TOP);
+            button.addEventHandler(MouseEvent.MOUSE_CLICKED, (MouseEvent mountEvent) -> {
+                dialog.close();
+            });
+
+            dialogLayout.setBody(new Text("B?ng chua có d? li?u"));
+            dialogLayout.setActions(button);
+            dialog.show();
+        }
+    }
+
+    @FXML
+    private void xoaHoaDon(ActionEvent event) {
+        boolean success = false;
+        TableSelectionModel<HoaDon> selectionModel = tableHoaDon.getSelectionModel();
+        selectionModel.setSelectionMode(SelectionMode.SINGLE);
+        ObservableList<HoaDon> selectedItems = selectionModel.getSelectedItems();
+        String maHD = selectedItems.get(0).getMahd();
+
+        String sql = "DELETE FROM hoadon WHERE mahd=?";
+        //String sql1 = "DELETE FROM chitiethd WHERE mahd=?";
+        Alert alert = new Alert(AlertType.CONFIRMATION);
+        alert.setTitle("Xác Nh?n");
+        alert.setHeaderText(null);
+        alert.setContentText("B?n có ch?c mu?n xóa Hóa Ðon này ?");
+        Optional<ButtonType> action = alert.showAndWait();
+        if (action.get() == ButtonType.OK) {
+            try {
+                ps = connect.prepareStatement(sql);
+                ps.setInt(1, Integer.valueOf(maHD));
+                ps.execute();
+                success = true;
+            } catch (SQLException e) {
+                System.err.println(e);
+            }
+//            try {
+//                ps = connect.prepareStatement(sql);
+//                ps.setInt(1, Integer.valueOf(maHD));
+//                ps.execute();
+//                success = true;
+//            } catch (SQLException e) {
+//                System.err.println(e);
+//            }
+        }
+        if (success) {
+            JFXDialogLayout dialogLayout = new JFXDialogLayout();
+            JFXButton button = new JFXButton("OK");
+            button.setStyle("-fx-background-color: #337ab7;");
+            JFXDialog dialog = new JFXDialog(rootPane, dialogLayout, JFXDialog.DialogTransition.TOP);
+            button.addEventHandler(MouseEvent.MOUSE_CLICKED, (MouseEvent mountEvent) -> {
+                dialog.close();
+            });
+
+            dialogLayout.setBody(new Text("Xóa Thành Công"));
+            dialogLayout.setActions(button);
+            dialog.show();
+            loadChiTietHD(Integer.valueOf(maHD));
+        }
+        loadHoaDon();
+    }
+
+    @FXML
+    private void filterHoaDon(MouseEvent event) {
+        FilteredList<HoaDon> filteredData = new FilteredList<>(tableHoaDon.getItems(), e -> true);
+
+        try {
+            filterFieldHD.setOnKeyReleased(e -> {
+                filterFieldHD.textProperty().addListener((observable, oldValue, newValue) -> {
+                    filteredData.setPredicate((Predicate<? super HoaDon>) hd -> {
+                        if (newValue == null || newValue.isEmpty()) {
+                            return true;
+                        }
+                        String lowerCaseFilter = newValue.toLowerCase();
+
+                        if (hd.getTenNV().toLowerCase().contains(lowerCaseFilter)) {
+                            return true;
+                        } else if (hd.getNgayTao().toLowerCase().contains(lowerCaseFilter)) {
+                            return true;
+                        } else if (hd.getTongGia().toLowerCase().contains(lowerCaseFilter)) {
+                            return true;
+                        } else if (hd.getStt().toLowerCase().contains(lowerCaseFilter)) {
+                            return true;
+                        } else {
+                            return false;
+                        }
+                    });
+                });
+            });
+
+            SortedList<HoaDon> sortedData = new SortedList<>(filteredData);
+            sortedData.comparatorProperty().bind(tableHoaDon.comparatorProperty());
+            tableHoaDon.setItems(sortedData);
+        } catch (Exception e) {
+            System.out.println(e);
+        }
+    }
+
+    // Quan Li Thanh Vien
+    //
+    void loadThanhVien() {
+        final ObservableList<ThanhVien> data = FXCollections.observableArrayList();
+        String sql = "SELECT MaTV, HoTen, SDT, NgayTao FROM THANHVIEN";
+        try {
+            ps = connect.prepareStatement(sql);
+            rs = ps.executeQuery();
+            int stt = 0;
+            while (rs.next()) {
+                stt++;
+
+                String tenTV = rs.getString("HoTen");
+                String SDT = rs.getString("SDT");
+                String ngayTao = rs.getString("NgayTao");
+                String maTV = rs.getString("maTV");
+                //    int quyen = rs.getInt("quyen");
+                data.add(new ThanhVien(String.valueOf(stt), tenTV, SDT, ngayTao, maTV));
+            }
+            tableThanhVien.setItems(data);
+        } catch (SQLException e) {
+            System.err.println(e);
+        }
+    }
+
+    @FXML
+    private void selectedItemsTV(MouseEvent event) {
+        TableViewSelectionModel<ThanhVien> selectionModel = tableThanhVien.getSelectionModel();
+        selectionModel.setSelectionMode(SelectionMode.SINGLE);
+        ObservableList<ThanhVien> selectedItems = selectionModel.getSelectedItems();
+        try {
+            tfTTV.setText(selectedItems.get(0).getTenTV());
+            tfSDT.setText(selectedItems.get(0).getSDT());
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+            tfngayTao.setValue(LocalDate.parse(selectedItems.get(0).getNgayTao(), formatter));
+
+        } catch (Exception e) {
+            JFXDialogLayout dialogLayout = new JFXDialogLayout();
+            JFXButton button = new JFXButton("OK");
+            button.setStyle("-fx-background-color: #337ab7;");
+            JFXDialog dialog = new JFXDialog(rootPane, dialogLayout, JFXDialog.DialogTransition.TOP);
+            button.addEventHandler(MouseEvent.MOUSE_CLICKED, (MouseEvent mountEvent) -> {
+                dialog.close();
+            });
+
+            dialogLayout.setBody(new Text("Bảng chưa có dữ liệu"));
+            dialogLayout.setActions(button);
+            dialog.show();
+        }
+
+    }
+
+    @FXML
+    private void xoaThanhVien(ActionEvent event) {
+        boolean success = false;
+        String sql = "DELETE FROM thanhvien WHERE SDT=?";
+
+        Alert alert = new Alert(AlertType.CONFIRMATION);
+        alert.setTitle("Xác Nhận");
+        alert.setHeaderText(null);
+        alert.setContentText("Bạn có chắc muốn xóa Thành Viên này ?");
+        Optional<ButtonType> action = alert.showAndWait();
+
+        if (action.get() == ButtonType.OK) {
+            try {
+                ps = connect.prepareStatement(sql);
+                ps.setString(1, tfSDT.getText());
+                ps.execute();
+            } catch (SQLException e) {
+                System.err.println(e);
+            }
+            success = true;
+        }
+        if (success) {
+            JFXDialogLayout dialogLayout = new JFXDialogLayout();
+            JFXButton button = new JFXButton("OK");
+            button.setStyle("-fx-background-color: #337ab7;");
+            JFXDialog dialog = new JFXDialog(rootPane, dialogLayout, JFXDialog.DialogTransition.TOP);
+            button.addEventHandler(MouseEvent.MOUSE_CLICKED, (MouseEvent mountEvent) -> {
+                dialog.close();
+            });
+
+            dialogLayout.setBody(new Text("Xóa Thanh Viên Thành Công"));
+            dialogLayout.setActions(button);
+            dialog.show();
+            clearInfoTV(event);
+        }
+
+        loadThanhVien();
+    }
+
+    private void clearInfoTV(ActionEvent event) {
+        tfTTV.setText("");
+        tfSDT.setText("");
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+        tfngayTao.setValue(LocalDate.parse("01/01/2020", formatter));
+        tfDiem.setText("");
+    }
+
+    @FXML
+    private void filterThanhVien(MouseEvent event) {
+        FilteredList<ThanhVien> filteredData = new FilteredList<>(tableThanhVien.getItems(), e -> true);
+
+        try {
+            tfTim.setOnKeyReleased(e -> {
+                tfTim.textProperty().addListener((observable, oldValue, newValue) -> {
+                    filteredData.setPredicate((Predicate<? super ThanhVien>) thanhvien -> {
+
+                        if (newValue == null || newValue.isEmpty()) {
+                            return true;
+                        }
+
+                        String lowerCaseFilter = newValue.toLowerCase();
+
+                        if (thanhvien.getTenTV().toLowerCase().contains(lowerCaseFilter)) {
+                            return true;
+                        } else if (thanhvien.getSDT().toLowerCase().contains(lowerCaseFilter)) {
+                            return true;
+                        } else if (thanhvien.getNgayTao().contains(lowerCaseFilter)) {
+                            return true;
+
+                        } else {
+                            return false;
+                        }
+                    });
+
+                });
+            });
+
+            SortedList<ThanhVien> sortedData = new SortedList<>(filteredData);
+
+            sortedData.comparatorProperty().bind(tableThanhVien.comparatorProperty());
+
+            tableThanhVien.setItems(sortedData);
+        } catch (Exception e) {
+            System.out.println(e);
+        }
+
+    }
+
+    boolean checkInputInfoTV() {
+        if (tfTTV.getText().equals("")) {
+            JFXDialogLayout dialogLayout = new JFXDialogLayout();
+            JFXButton button = new JFXButton("OK");
+            button.setStyle("-fx-background-color: #337ab7;");
+            JFXDialog dialog = new JFXDialog(rootPane, dialogLayout, JFXDialog.DialogTransition.TOP);
+            button.addEventHandler(MouseEvent.MOUSE_CLICKED, (MouseEvent mountEvent) -> {
+                dialog.close();
+            });
+
+            dialogLayout.setBody(new Text("Chưa điền tên Thành Viên"));
+            dialogLayout.setActions(button);
+            dialog.show();
+            return false;
+        }
+
+        if (tfSDT.getText().equals("")) {
+            JFXDialogLayout dialogLayout = new JFXDialogLayout();
+            JFXButton button = new JFXButton("OK");
+            button.setStyle("-fx-background-color: #337ab7;");
+            JFXDialog dialog = new JFXDialog(rootPane, dialogLayout, JFXDialog.DialogTransition.TOP);
+            button.addEventHandler(MouseEvent.MOUSE_CLICKED, (MouseEvent mountEvent) -> {
+                dialog.close();
+            });
+            dialogLayout.setBody(new Text("Chưa điền Số Điện Thoại"));
+            dialogLayout.setActions(button);
+            dialog.show();
+            return false;
+        }
+
+        return true;
+    }
+
+    boolean checkSDT(String SDT) {
+        TableSelectionModel<ThanhVien> selectModel = tableThanhVien.getSelectionModel();
+        ObservableList<ThanhVien> selectedItems = selectModel.getSelectedItems();
+        try {
+            String sql1 = "SELECT sdt from thanhvien WHERE sdt=?";
+            ps = connect.prepareStatement(sql1);
+            ps.setString(1, SDT);
+
+            rs = ps.executeQuery();
+            if (rs.next()) {
+                JFXDialogLayout dialogLayout = new JFXDialogLayout();
+                JFXButton button = new JFXButton("OK");
+                button.setStyle("-fx-background-color: #337ab7;");
+                JFXDialog dialog = new JFXDialog(rootPane, dialogLayout, JFXDialog.DialogTransition.TOP);
+                button.addEventHandler(MouseEvent.MOUSE_CLICKED, (MouseEvent mountEvent) -> {
+                    dialog.close();
+                });
+
+                dialogLayout.setBody(new Text("Số Điện Thoại này đã tồn tại"));
+                dialogLayout.setActions(button);
+                dialog.show();
+                return false;
+            }
+        } catch (SQLException e) {
+            System.err.println(e);
+        }
+        return true;
+    }
+
+    @FXML
+    private void themThanhVien(ActionEvent event) {
+        String sql = "INSERT INTO thanhvien VALUES(?, ?,?)";
+
+        boolean success = false;
+        if (checkInputInfoTV() && checkSDT(tfSDT.getText())) {
+            try {
+                ps = connect.prepareStatement(sql);
+                ps.setString(1, tfTTV.getText());
+                ps.setString(2, tfSDT.getText());
+                ps.setString(3, tfngayTao.getValue().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")));
+                ps.execute();
+                success = true;
+            } catch (SQLException e) {
+                System.err.println(e);
+            }
+        }
+
+        if (success) {
+            JFXDialogLayout dialogLayout = new JFXDialogLayout();
+            JFXButton button = new JFXButton("OK");
+            button.setStyle("-fx-background-color: #337ab7;");
+            JFXDialog dialog = new JFXDialog(rootPane, dialogLayout, JFXDialog.DialogTransition.TOP);
+            button.addEventHandler(MouseEvent.MOUSE_CLICKED, (MouseEvent mountEvent) -> {
+                dialog.close();
+            });
+
+            dialogLayout.setBody(new Text("Thêm Thành Viên Thành Công"));
+            dialogLayout.setActions(button);
+            dialog.show();
+        }
+        loadThanhVien();
+
+    }
+
+    @FXML
+
+    private void suaThanhVien(ActionEvent event) throws SQLException {
+        boolean success = false;
+        TableViewSelectionModel<ThanhVien> selectionModel = tableThanhVien.getSelectionModel();
+        selectionModel.setSelectionMode(SelectionMode.SINGLE);
+        ObservableList<ThanhVien> selectedItems = selectionModel.getSelectedItems();
+        String maTV = selectedItems.get(0).getMaTV();
+
+        String sql = "UPDATE thanhvien SET HoTen=?, SDT=? WHERE MaTV=?";
+
+        String SDT = "";
+        String loadSDT = "SELECT SDT from thanhvien where matv=?";
+        try {
+            ps = connect.prepareCall(loadSDT);
+            ps.setInt(1, Integer.valueOf(maTV));
+            rs = ps.executeQuery();
+            while (rs.next()) {
+                SDT = rs.getString("sdt");
+            }
+        } catch (Exception e) {
+            System.err.println(e);
+        }
+        System.err.println(SDT);
+        String sql1 = "UPDATE thanhvien SET hoten=?, ngaytao=? WHERE MaTV=?";
+
+        if (checkInputInfoTV() && checkSDT("")) {
+            Alert alert = new Alert(AlertType.CONFIRMATION);
+            alert.setTitle("Xác Nhận");
+            alert.setHeaderText(null);
+            alert.setContentText("Bạn có chắc muốn chỉnh sửa Thành Viên này ?");
+            Optional<ButtonType> action = alert.showAndWait();
+            if (action.get() == ButtonType.OK) {
+                if (SDT.equals(tfSDT.getText())) {
+
+                    try {
+                        ps = connect.prepareStatement(sql1);
+
+                        ps.setString(1, tfTTV.getText());
+                        ps.setString(2, tfngayTao.getValue().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")));
+
+                        ps.setInt(3, Integer.valueOf(maTV));
+
+                        ps.executeUpdate();
+                        success = true;
+                    } catch (Exception e) {
+                        System.err.println(e);
+                    }
+                } else {
+                    String sql3 = "SELECT * FROM thanhvien WHERE SDT=?";
+                    try {
+                        ps = connect.prepareCall(sql3);
+                        ps.setString(1, tfSDT.getText());
+                        rs = ps.executeQuery();
+                        if (rs.next()) {
+                            JFXDialogLayout dialogLayout = new JFXDialogLayout();
+                            JFXButton button = new JFXButton("OK");
+                            button.setStyle("-fx-background-color: #337ab7;");
+                            JFXDialog dialog = new JFXDialog(rootPane, dialogLayout, JFXDialog.DialogTransition.TOP);
+                            button.addEventHandler(MouseEvent.MOUSE_CLICKED, (MouseEvent mountEvent) -> {
+                                dialog.close();
+                            });
+
+                            dialogLayout.setBody(new Text("Số Điện Thoại Đã Tồn Tại"));
+                            dialogLayout.setActions(button);
+                            dialog.show();
+                            return;
+                        } else {
+                            try {
+                                String sql2 = "UPDATE thanhvien SET hoten=?, SDT=? WHERE matv=?";
+                                ps = connect.prepareStatement(sql2);
+                                ps.setString(1, tfTTV.getText());
+                                ps.setString(2, tfSDT.getText());
+                                ps.setString(3, tfngayTao.getValue().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")));
+                                ps.setInt(4, Integer.valueOf(maTV));
+
+                                ps.executeUpdate();
+                                success = true;
+
+                            } catch (SQLException e) {
+                                System.err.println(e);
+                            }
+                        }
+                    } catch (SQLException e) {
+                        System.err.println(e);
+                    }
+                }
+            }
+            if (success) {
+                JFXDialogLayout dialogLayout = new JFXDialogLayout();
+                JFXButton button = new JFXButton("OK");
+                button.setStyle("-fx-background-color: #337ab7;");
+                JFXDialog dialog = new JFXDialog(rootPane, dialogLayout, JFXDialog.DialogTransition.TOP);
+                button.addEventHandler(MouseEvent.MOUSE_CLICKED, (MouseEvent mountEvent) -> {
+                    dialog.close();
+                });
+
+                dialogLayout.setBody(new Text("Sửa Thành Viên Thành Công"));
+                dialogLayout.setActions(button);
+                dialog.show();
+                clearInfoTV(event);
+            }
+            loadThanhVien();
+
+        }
+    }
+
+    @FXML
+    void XemHoaDon(ActionEvent event) throws IOException {
+        TableViewSelectionModel<ThanhVien> selectionModel = tableThanhVien.getSelectionModel();
+        selectionModel.setSelectionMode(SelectionMode.SINGLE);
+        ObservableList<ThanhVien> selectedItems = selectionModel.getSelectedItems();
+        maTV = selectedItems.get(0).getMaTV();
+        System.out.println(maTV);
+
+        Parent root = FXMLLoader.load(getClass().getResource("XemHoaDon.fxml"));
+
+        Scene scene = new Scene(root, 510, 400);
+        Stage primaryStage = new Stage();
+        primaryStage.setTitle("Thông tin Hóa Đơn");
+        primaryStage.setScene(scene);
+        primaryStage.show();
     }
 
 }

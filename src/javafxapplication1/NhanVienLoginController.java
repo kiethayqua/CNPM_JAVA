@@ -132,7 +132,7 @@ public class NhanVienLoginController implements Initializable {
 
     void loadTraSua() {
         final ObservableList<ComponentTraSua> data = FXCollections.observableArrayList();
-        String sql = "SELECT * FROM TraSua";
+        String sql = "SELECT * FROM TraSua WHERE trangthai=1";
         try {
             ps = connect.prepareStatement(sql);
             rs = ps.executeQuery();
