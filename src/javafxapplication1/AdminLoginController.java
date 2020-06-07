@@ -24,8 +24,11 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.Date;
 import java.util.Optional;
 import java.util.ResourceBundle;
 import java.util.function.Predicate;
@@ -1547,51 +1550,13 @@ public class AdminLoginController implements Initializable {
 
     }
 
-    @FXML
-    private void xoaThanhVien(ActionEvent event) {
-        boolean success = false;
-        String sql = "DELETE FROM thanhvien WHERE SDT=?";
-
-        Alert alert = new Alert(AlertType.CONFIRMATION);
-        alert.setTitle("Xác Nhận");
-        alert.setHeaderText(null);
-        alert.setContentText("Bạn có chắc muốn xóa Thành Viên này ?");
-        Optional<ButtonType> action = alert.showAndWait();
-
-        if (action.get() == ButtonType.OK) {
-            try {
-                ps = connect.prepareStatement(sql);
-                ps.setString(1, tfSDT.getText());
-                ps.execute();
-            } catch (SQLException e) {
-                System.err.println(e);
-            }
-            success = true;
-        }
-        if (success) {
-            JFXDialogLayout dialogLayout = new JFXDialogLayout();
-            JFXButton button = new JFXButton("OK");
-            button.setStyle("-fx-background-color: #337ab7;");
-            JFXDialog dialog = new JFXDialog(rootPane, dialogLayout, JFXDialog.DialogTransition.TOP);
-            button.addEventHandler(MouseEvent.MOUSE_CLICKED, (MouseEvent mountEvent) -> {
-                dialog.close();
-            });
-
-            dialogLayout.setBody(new Text("Xóa Thanh Viên Thành Công"));
-            dialogLayout.setActions(button);
-            dialog.show();
-            clearInfoTV(event);
-        }
-
-        loadThanhVien();
-    }
-
     private void clearInfoTV(ActionEvent event) {
+        DateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy");
+        Date today = new Date();
         tfTTV.setText("");
         tfSDT.setText("");
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
-        tfngayTao.setValue(LocalDate.parse("01/01/2020", formatter));
-        tfDiem.setText("");
+        tfngayTao.setValue(LocalDate.parse(dateFormat.format(today), formatter));
     }
 
     @FXML
@@ -1733,13 +1698,14 @@ public class AdminLoginController implements Initializable {
     }
 
     @FXML
-
     private void suaThanhVien(ActionEvent event) throws SQLException {
         boolean success = false;
         TableViewSelectionModel<ThanhVien> selectionModel = tableThanhVien.getSelectionModel();
         selectionModel.setSelectionMode(SelectionMode.SINGLE);
         ObservableList<ThanhVien> selectedItems = selectionModel.getSelectedItems();
         String maTV = selectedItems.get(0).getMaTV();
+        DateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy");
+        Date today = new Date();
 
         String sql = "UPDATE thanhvien SET HoTen=?, SDT=? WHERE MaTV=?";
 
@@ -1771,11 +1737,11 @@ public class AdminLoginController implements Initializable {
                         ps = connect.prepareStatement(sql1);
 
                         ps.setString(1, tfTTV.getText());
-                        ps.setString(2, tfngayTao.getValue().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")));
+                        ps.setString(2, dateFormat.format(today));
 
                         ps.setInt(3, Integer.valueOf(maTV));
 
-                        ps.executeUpdate();
+                        ps.execute();
                         success = true;
                     } catch (Exception e) {
                         System.err.println(e);
@@ -1801,11 +1767,11 @@ public class AdminLoginController implements Initializable {
                             return;
                         } else {
                             try {
-                                String sql2 = "UPDATE thanhvien SET hoten=?, SDT=? WHERE matv=?";
+                                String sql2 = "UPDATE thanhvien SET hoten=?, SDT=?, ngaytao=? WHERE matv=?";
                                 ps = connect.prepareStatement(sql2);
                                 ps.setString(1, tfTTV.getText());
                                 ps.setString(2, tfSDT.getText());
-                                ps.setString(3, tfngayTao.getValue().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")));
+                                ps.setString(3, dateFormat.format(today));
                                 ps.setInt(4, Integer.valueOf(maTV));
 
                                 ps.executeUpdate();

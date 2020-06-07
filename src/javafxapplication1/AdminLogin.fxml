@@ -109,7 +109,7 @@
                               <JFXTextField fx:id="tfTim" layoutX="648.0" layoutY="62.0" onMouseReleased="#filterThanhVien" prefHeight="31.0" prefWidth="144.0" />
                               <Label layoutX="571.0" layoutY="67.0" text="Tìm Kiếm" />
                               <JFXDatePicker fx:id="tfngayTao" layoutX="649.0" layoutY="231.0" prefHeight="31.0" prefWidth="143.0" />
-                              <JFXButton layoutX="562.0" layoutY="285.0" onAction="#xoaThanhVien" prefHeight="31.0" prefWidth="62.0" style="-fx-background-color: #ea7053;" text="Xóa" />
+                              <JFXButton layoutX="562.0" layoutY="285.0" onAction="#suaThanhVien" prefHeight="31.0" prefWidth="62.0" style="-fx-background-color: #ea7053;" text="Sửa" />
                               <JFXButton layoutX="631.0" layoutY="285.0" onAction="#XemHoaDon" prefHeight="31.0" prefWidth="102.0" style="-fx-background-color: #337ab7;" text="Xem Hoạt Động" />
                               <JFXButton layoutX="740.0" layoutY="285.0" onAction="#themThanhVien" prefHeight="31.0" prefWidth="57.0" style="-fx-background-color: #5cb85c;" text="Thêm" />
                            </children>

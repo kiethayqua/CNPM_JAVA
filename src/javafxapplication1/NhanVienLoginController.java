@@ -95,15 +95,15 @@ public class NhanVienLoginController implements Initializable {
         tableThanhToan.setEditable(true);
         TableColumn column1 = new TableColumn("Tên Trà Sữa");
         column1.setCellValueFactory(new PropertyValueFactory<ThanhToan, String>("tenTS"));
-        //column1.setPrefWidth(47);
+        column1.setPrefWidth(154);
 
         TableColumn column2 = new TableColumn("Giá");
         column2.setCellValueFactory(new PropertyValueFactory<ThanhToan, String>("giaTS"));
-        //column2.setPrefWidth(153);
+        column2.setPrefWidth(78);
 
-        TableColumn column3 = new TableColumn("Số Lượng");
+        TableColumn column3 = new TableColumn("SL");
         column3.setCellValueFactory(new PropertyValueFactory<Person, String>("soLuong"));
-        // column3.setPrefWidth(105);
+        column3.setPrefWidth(44);
 
         tableThanhToan.getColumns().addAll(column1, column2, column3);
         loadTraSua();
@@ -226,7 +226,7 @@ public class NhanVienLoginController implements Initializable {
             // lay ngay hom nay
             DateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy");
             Date today = new Date();
-            System.out.println(dateFormat.format(today));
+            //System.out.println(dateFormat.format(today));
 
             ps = connect.prepareStatement(sql2);
             ps.setString(1, tfMaThanhVien.getText());
