@@ -323,7 +323,7 @@ public class NhanVienLoginController implements Initializable {
         Parent root = FXMLLoader.load(getClass().getResource("TaoThanhVien.fxml"));
 
         Stage primaryStage = new Stage();
-        Scene scene = new Scene(root, 266, 191);
+        Scene scene = new Scene(root, 327, 210);
 
         primaryStage.setTitle("Tạo Thành Viên");
         primaryStage.setScene(scene);
