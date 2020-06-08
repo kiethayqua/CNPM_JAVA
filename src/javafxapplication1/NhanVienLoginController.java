@@ -119,8 +119,10 @@ public class NhanVienLoginController implements Initializable {
                     for (int i = 0; i < tableThanhToan.getItems().size(); i++) {
                         tongTien += tableThanhToan.getItems().get(i).getGiaTS() * tableThanhToan.getItems().get(i).getSoLuong();
                     }
+                    int giamgia = tongTien * 5 / 100;
+                    giamGia.setText(String.valueOf(giamgia));
                     tongHoaDon.setText(String.valueOf(tongTien));
-                    thanhTien.setText(String.valueOf(tongTien - Integer.valueOf(giamGia.getText())));
+                    thanhTien.setText(String.valueOf(tongTien - giamgia));
                 }
             }
         });
