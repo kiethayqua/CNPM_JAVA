@@ -1024,7 +1024,16 @@ public class AdminLoginController implements Initializable {
                 ps.execute();
                 success = true;
             } catch (SQLException e) {
-                System.err.println(e);
+                JFXDialogLayout dialogLayout = new JFXDialogLayout();
+                JFXButton button = new JFXButton("OK");
+                button.setStyle("-fx-background-color: #337ab7;");
+                JFXDialog dialog = new JFXDialog(rootPane, dialogLayout, JFXDialog.DialogTransition.TOP);
+                button.addEventHandler(MouseEvent.MOUSE_CLICKED, (MouseEvent mountEvent) -> {
+                    dialog.close();
+                });
+                dialogLayout.setBody(new Text("Tên Trà Sữa đã Tồn Tại"));
+                dialogLayout.setActions(button);
+                dialog.show();
             } catch (Exception ex) {
                 JFXDialogLayout dialogLayout = new JFXDialogLayout();
                 JFXButton button = new JFXButton("OK");
