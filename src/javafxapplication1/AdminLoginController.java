@@ -37,7 +37,6 @@ import java.util.logging.Logger;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
-import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
 import javafx.collections.transformation.SortedList;
@@ -1483,7 +1482,9 @@ public class AdminLoginController implements Initializable {
                             return true;
                         } else if (hd.getStt().toLowerCase().contains(lowerCaseFilter)) {
                             return true;
-                        } else {
+                        }else if (hd.getSdt().toLowerCase().contains(lowerCaseFilter)) {
+                            return true;
+                        }else {
                             return false;
                         }
                     });

@@ -133,8 +133,8 @@ public class LoginController implements Initializable {
                 rs = ps.executeQuery();
                 if (rs.next()) {
                     loginAccount = rs.getString("taikhoan");
-                    loginBtn.getScene().getWindow().hide();
                     if (rs.getInt("quyen") == 1) {
+                        loginBtn.getScene().getWindow().hide();
                         Parent root = FXMLLoader.load(getClass().getResource("AdminLogin.fxml"));
 
                         Stage primaryStage = new Stage();
@@ -144,14 +144,37 @@ public class LoginController implements Initializable {
                         primaryStage.setScene(scene);
                         primaryStage.show();
                     } else if (rs.getInt("quyen") == 0) {
+                        loginBtn.getScene().getWindow().hide();
                         Parent root = FXMLLoader.load(getClass().getResource("NhanVienLogin.fxml"));
 
                         Stage primaryStage = new Stage();
                         Scene scene = new Scene(root, 800, 600);
 
-                        primaryStage.setTitle("Nh鈔 Vi阯");
+                        primaryStage.setTitle("Nhân Viên");
                         primaryStage.setScene(scene);
                         primaryStage.show();
+                    } else if (rs.getInt("quyen") == -1) {
+                        JFXDialogLayout dialogLayout = new JFXDialogLayout();
+                        JFXButton button = new JFXButton("OK");
+                        button.setStyle("-fx-background-color: #337ab7;");
+                        JFXDialog dialog = new JFXDialog(rootPane, dialogLayout, JFXDialog.DialogTransition.CENTER);
+                        button.addEventHandler(MouseEvent.MOUSE_CLICKED, (MouseEvent mountEvent) -> {
+                            dialog.close();
+
+                        });
+                        dialogLayout.setBody(new Text("Tài Khoản Nhân Viên Này Không Khả Dụng"));
+                        dialogLayout.setActions(button);
+                        dialog.show();
+                        repeatFocus(dialogLayout);
+                        //dialogLayout.requestFocus();
+                        dialogLayout.setOnKeyPressed(new EventHandler<KeyEvent>() {
+                            @Override
+                            public void handle(KeyEvent event) {
+                                if (event.getCode() == KeyCode.ENTER) {
+                                    dialog.close();
+                                }
+                            }
+                        });
                     }
 
                 } else {
@@ -166,7 +189,7 @@ public class LoginController implements Initializable {
                     dialogLayout.setBody(new Text("Tên Tài Khoản Hoặc Mật Khẩu Không Đúng"));
                     dialogLayout.setActions(button);
                     dialog.show();
-                     repeatFocus(dialogLayout);
+                    repeatFocus(dialogLayout);
                     //dialogLayout.requestFocus();
                     dialogLayout.setOnKeyPressed(new EventHandler<KeyEvent>() {
                         @Override
